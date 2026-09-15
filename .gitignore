@@ -1,16 +1,11 @@
-# Environment variables (contains secrets - DO NOT commit)
-.env
+# Database and archives
+posted_topics.db
+posted_topics.db-shm
+posted_topics.db-wal
+archives/
 
-# Runtime state
-pending_posts.jsonl
-seen_posts.json
-last_offset.txt
-last_run.txt
-
-# Backup/legacy
-fallback_scraper.py
-listener_debug.py
-
-# Test artifacts
+# Temporary files
 digest.html
 digest_message.json
+fallback_scraper.py
+listener_debug.py
