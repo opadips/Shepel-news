@@ -1,11 +1,28 @@
+# Sensitive
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
 # Database and archives
 posted_topics.db
-posted_topics.db-shm
-posted_topics.db-wal
+*.db-shm
+*.db-wal
 archives/
 
-# Temporary files
+# Runtime state
+pending_posts.jsonl
+seen_posts.json
+last_offset.txt
+last_run.txt
+
+# Test artifacts
 digest.html
+digest_*.html
 digest_message.json
+payload.json
+
+# Backup/legacy
 fallback_scraper.py
 listener_debug.py
