@@ -17,12 +17,33 @@ seen_posts.json
 last_offset.txt
 last_run.txt
 
-# Test artifacts
+# Test artifacts / scratch files
 digest.html
 digest_*.html
+digest_*.txt
 digest_message.json
-payload.json
+digest_final_payload.json
+payload*.json
+payload*.py
+empty_check.txt
+*.py.bak
 
-# Backup/legacy
+# Backup/legacy scripts
 fallback_scraper.py
 listener_debug.py
+scraper_fix.py
+scraper_fix2.py
+
+# Build/send scratch scripts
+build_*.py
+build_*.json
+send_digest*.py
+send_digest*.json
+send_payload*.json
+send_run*.py
+send_payload*.json
+
+# One-shot scripts
+oneshot_scrape.py
+poll_once.py
+last_sent_msg_id.txt

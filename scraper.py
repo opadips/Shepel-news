@@ -33,27 +33,32 @@ def fetch_page():
 
 def extract_posts(html):
     posts = []
-    ids = re.findall(r'data-post="shepel_news/(\d+)"', html)
-    texts = re.findall(r'tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)</div>\s*<div class="tgme_widget_message_footer', html)
+    post_positions = [(m.start(), m.group(1)) for m in re.finditer(r'data-post="shepel_news/(\d+)"', html)]
     
-    for post_id, text_block in zip(ids, texts):
-        urls = re.findall(r'href="(https?://[^"]*)"', text_block)
-        article_urls = [u for u in urls if not any(x in u.lower() for x in ['telegram.org', 't.me/', 'twitter.com', 'x.com'])]
+    for i, (start, post_id) in enumerate(post_positions):
+        end = post_positions[i + 1][0] if i + 1 < len(post_positions) else len(html)
+        section = html[start:end]
         
-        txt = re.sub(r'<a[^>]*href="([^"]*)"[^>]*>([^<]*)</a>', r'[\2](\1)', text_block)
-        text = re.sub(r'<[^>]+>', ' ', txt).strip()
-        text = re.sub(r'\s+', ' ', text)
-        text = html_module.unescape(text)
-        
-        if article_urls:
-            posts.append({
-                "message_id": int(post_id),
-                "text": text,
-                "urls": article_urls[:10],
-                "chat": {"id": SOURCE_CHANNEL_ID, "title": "shepel-news", "type": "channel"},
-                "date": int(time.time()),
-                "processed": False
-            })
+        text_match = re.search(r'tgme_widget_message_text[^>]*>([\s\S]*?)</div>\s*<div class="tgme_widget_message_footer', section)
+        if text_match:
+            text_block = text_match.group(1)
+            urls = re.findall(r'href="(https?://[^"]*)"', text_block)
+            article_urls = [u for u in urls if not any(x in u.lower() for x in ['telegram.org', 't.me/', 'twitter.com', 'x.com'])]
+            
+            txt = re.sub(r'<a[^>]*href="([^"]*)"[^>]*>([^<]*)</a>', r'[\2](\1)', text_block)
+            text = re.sub(r'<[^>]+>', ' ', txt).strip()
+            text = re.sub(r'\s+', ' ', text)
+            text = html_module.unescape(text)
+            
+            if article_urls:
+                posts.append({
+                    "message_id": int(post_id),
+                    "text": text,
+                    "urls": article_urls[:10],
+                    "chat": {"id": SOURCE_CHANNEL_ID, "title": "shepel-news", "type": "channel"},
+                    "date": int(time.time()),
+                    "processed": False
+                })
     return posts
 
 def load_seen():
@@ -70,7 +75,17 @@ def save_seen(seen):
 def load_pending():
     try:
         with open(PENDING_FILE) as f:
-            return [json.loads(line) for line in f if line.strip()]
+            result = []
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        item = json.loads(line)
+                        if isinstance(item, dict):
+                            result.append(item)
+                    except:
+                        pass
+            return result
     except:
         return []
 
@@ -96,7 +111,7 @@ def main():
                     seen.add(p["message_id"])
                 
                 existing = load_pending()
-                existing_ids = {p["message_id"] for p in existing if p.get("processed", False)}
+                existing_ids = {p["message_id"] for p in existing if p.get("processed", False) and "message_id" in p}
                 
                 added = 0
                 for p in new_posts:
