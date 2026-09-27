@@ -47,12 +47,22 @@ def insert_topic(topic_key, headline, sources):
     conn = init_db()
     if isinstance(sources, list):
         sources = ",".join(sources)
+    # Check for duplicate within the last 7 days — reject if same topic_key exists
+    cutoff = time.time() - (7 * 86400)
+    existing = conn.execute(
+        "SELECT id, topic_key, headline, posted_at FROM posted_topics WHERE topic_key = ? AND posted_at > ?",
+        (topic_key, cutoff)
+    ).fetchall()
+    if existing:
+        conn.close()
+        return False, f"Duplicate rejected: topic_key '{topic_key}' already exists (id {existing[0][0]}, posted {datetime.fromtimestamp(existing[0][3])})"
     conn.execute(
         "INSERT INTO posted_topics (topic_key, headline, sources, posted_at) VALUES (?, ?, ?, ?)",
         (topic_key, headline, sources, time.time())
     )
     conn.commit()
     conn.close()
+    return True, f"Inserted: {topic_key}"
 
 def prune_old(days=14):
     conn = init_db()
@@ -95,8 +105,10 @@ if __name__ == "__main__":
         topic_key = sys.argv[2]
         headline = sys.argv[3]
         sources = sys.argv[4] if len(sys.argv) > 4 else ""
-        insert_topic(topic_key, headline, sources)
-        print(f"Inserted: {topic_key}")
+        success, message = insert_topic(topic_key, headline, sources)
+        print(message)
+        if not success:
+            sys.exit(1)
     
     elif cmd == "prune":
         days = int(sys.argv[2]) if len(sys.argv) > 2 else 14
